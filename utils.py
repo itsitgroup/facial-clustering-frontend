@@ -6,6 +6,7 @@ import streamlit as st
 from PIL import Image, ImageDraw
 
 
+# Helper functions
 def load_json(json_file):
     """Load the JSON content from the uploaded file and remove cluster -4."""
     data = json.load(json_file)
@@ -58,10 +59,7 @@ def draw_bounding_boxes_with_colors(image_dir, image_data):
         st.error(f"The directory '{image_dir}' does not exist. Please check the path.")
         return []
 
-    # Define a palette of colors
-    color_palette = [
-        "red", "green", "blue", "orange", "purple", "cyan", "yellow", "pink", "lime", "brown"
-    ]
+    color_palette = ["red", "green", "blue", "orange", "purple", "cyan", "yellow", "pink", "lime", "brown"]
 
     images = []
     image_dir_files = {f.lower(): f for f in os.listdir(image_dir)}  # Case-insensitive matching
@@ -91,10 +89,32 @@ def draw_bounding_boxes_with_colors(image_dir, image_data):
     return images
 
 
-# Callback for checkbox toggle
-def toggle_checkbox():
-    """Toggle the state of the 'Show Images with Multiple Faces Only' checkbox."""
-    st.session_state.show_multiple_faces_only = not st.session_state.show_multiple_faces_only
+# def toggle_checkbox(key):
+#     """Toggle the state of a checkbox."""
+#     st.session_state[key] = not st.session_state[key]
 
-def toggle_show_face_ids():
-    st.session_state.show_face_ids = not st.session_state.show_face_ids
+
+@st.dialog("Face Details")
+def show_face_details(face_info):
+    """Display a modal with face details."""
+    st.markdown("## Face Details")
+    st.table({
+        "Attribute": [
+            "Cluster Label", "Cluster Size", "Face ID", "File Name", 
+            "Coordinates", "Width", "Height", "Alignment Method", 
+            "Score", "Blur Score"
+        ],
+        "Value": [
+            face_info.get("cluster_label", "N/A"),
+            face_info.get("cluster_size", "N/A"),
+            face_info.get("face_id", "N/A"),
+            face_info.get("file_name", "N/A"),
+            face_info.get("cords", "N/A"),
+            face_info.get("width", "N/A"),
+            face_info.get("height", "N/A"),
+            face_info.get("alignment_method", "N/A"),
+            face_info.get("score", "N/A"),
+            face_info.get("blur_score", "N/A"),
+        ]
+    })
+    st.button("Close")

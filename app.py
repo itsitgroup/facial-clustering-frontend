@@ -1,6 +1,6 @@
-from utils import *
 import streamlit as st
 from st_copy_to_clipboard import st_copy_to_clipboard
+from utils import *
 
 # Set wide page layout
 st.set_page_config(page_title="Cluster Visualization App", layout="wide")
@@ -76,18 +76,17 @@ if uploaded_file and image_dir:
     image_data = process_faces_by_image(selected_data["faces"])
 
     # Checkbox for filters and toggles
-    st.checkbox(
+    show_multiple_faces = st.checkbox(
         "Show Images with Multiple Faces Only",
         value=st.session_state.show_multiple_faces_only,
-        key="show_multiple_faces_only",
-        on_change=toggle_checkbox,
     )
-    st.checkbox(
+    st.session_state.show_multiple_faces_only = show_multiple_faces
+
+    show_face_ids = st.checkbox(
         "Show Face ID",
         value=st.session_state.show_face_ids,
-        key="show_face_ids_toggle",
-        on_change=toggle_show_face_ids,
     )
+    st.session_state.show_face_ids = show_face_ids
 
     # Filter images if checkbox is checked
     filtered_data = {
@@ -109,24 +108,43 @@ if uploaded_file and image_dir:
         num_columns = 3
         columns = st.columns(num_columns)
 
-        # Inside the main rendering loop
         for idx, (file_name, image, clickable_regions) in enumerate(images):
             with columns[idx % num_columns]:
-                # Display the image
                 st.image(image, use_container_width=True, caption=f"{file_name}")
 
-                # Display Face ID and Copy button only if 'Show Face ID' is checked
                 if st.session_state.show_face_ids:
-                    for face_id, _, color in clickable_regions:
-                        st.markdown(
-                            f"<div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>"
-                            f"<span style='color: {color}; font-weight: bold;'>Face ID:</span> "
-                            f"<span style='color: {color}; font-weight: bold;'>{face_id}</span>",
-                            unsafe_allow_html=True,
-                        )
-                        st_copy_to_clipboard(
-                            text=face_id,
-                            before_copy_label="📋 Copy",
-                            after_copy_label="✅ Copied!",
-                            key=f"copy_{file_name}_{face_id}",
-                        )
+                    for face_id, cords, color in clickable_regions:
+                        col1, col2, col3 = st.columns([2, 1, 1])
+
+                        with col1:
+                            st.markdown(
+                                f"<span style='color: {color}; font-weight: bold;'>Face ID: {face_id}</span>",
+                                unsafe_allow_html=True,
+                            )
+                        with col2:
+                            st_copy_to_clipboard(
+                                text=face_id,
+                                before_copy_label="📋 Copy",
+                                after_copy_label="✅ Copied!",
+                                key=f"copy_{file_name}_{face_id}",
+                            )
+                        with col3:
+                            if st.button("Details", key=f"details_{file_name}_{face_id}"):
+                                face_data = next(
+                                    face for face in selected_data["faces"]
+                                    if face["face_id"] == face_id
+                                )
+
+                                face_info = {
+                                    "cluster_label": selected_cluster_label,
+                                    "cluster_size": cluster_size,
+                                    "face_id": face_id,
+                                    "file_name": file_name,
+                                    "cords": face_data["cords"],
+                                    "width": face_data["cords"][2] - face_data["cords"][0],
+                                    "height": face_data["cords"][3] - face_data["cords"][1],
+                                    "alignment_method": face_data.get("alignment_method", "N/A"),
+                                    "score": face_data.get("score", "N/A"),
+                                    "blur_score": face_data.get("blur_score", "N/A")
+                                }
+                                show_face_details(face_info)
