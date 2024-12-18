@@ -8,11 +8,13 @@ st.set_page_config(page_title="Cluster Visualization App", layout="wide")
 # Streamlit app
 st.title("Cluster Visualization App")
 
-# Initialize session state for selected cluster and checkbox
+# Initialize session state for selected cluster and checkboxes
 if "selected_cluster_label" not in st.session_state:
     st.session_state.selected_cluster_label = None
 if "show_multiple_faces_only" not in st.session_state:
     st.session_state.show_multiple_faces_only = False
+if "show_face_ids" not in st.session_state:
+    st.session_state.show_face_ids = True  # Default to showing Face IDs
 
 # File uploader for JSON
 uploaded_file = st.file_uploader("Upload JSON File", type=["json"])
@@ -45,7 +47,7 @@ if uploaded_file and image_dir:
             )
 
         # Display thumbnails for each cluster
-        cols = st.sidebar.columns(3)  # Display thumbnails in 3 columns
+        cols = st.sidebar.columns(3)
         for i in range(1, 4):
             thumbnail_key = f"thumbnail_{i}"
             if thumbnail_key in cluster:
@@ -55,7 +57,7 @@ if uploaded_file and image_dir:
                         st.image(thumbnail, use_container_width=True)
             else:
                 with cols[i - 1]:
-                    st.write("No thumbnail available")  # Handle missing thumbnails gracefully
+                    st.write("No thumbnail available")
 
         # Add a button to select this cluster
         if st.sidebar.button(f"Select Cluster {cluster_label}", key=f"select_{cluster_label}"):
@@ -73,12 +75,18 @@ if uploaded_file and image_dir:
     # Process faces and group by file_name
     image_data = process_faces_by_image(selected_data["faces"])
 
-    # Checkbox to filter images with multiple faces
+    # Checkbox for filters and toggles
     st.checkbox(
         "Show Images with Multiple Faces Only",
         value=st.session_state.show_multiple_faces_only,
-        key="checkbox",
+        key="show_multiple_faces_only",
         on_change=toggle_checkbox,
+    )
+    st.checkbox(
+        "Show Face ID",
+        value=st.session_state.show_face_ids,
+        key="show_face_ids_toggle",
+        on_change=toggle_show_face_ids,
     )
 
     # Filter images if checkbox is checked
@@ -92,7 +100,7 @@ if uploaded_file and image_dir:
     if st.session_state.show_multiple_faces_only and not filtered_data:
         st.info("No images with multiple faces in this cluster.")
 
-    # Main area: Display images with bounding boxes and color-coded face IDs
+    # Main area: Display images with bounding boxes
     images = draw_bounding_boxes_with_colors(image_dir, filtered_data)
 
     if not images:
@@ -107,18 +115,18 @@ if uploaded_file and image_dir:
                 # Display the image
                 st.image(image, use_container_width=True, caption=f"{file_name}")
 
-                # Create a compact section for face_id buttons
-                for face_id, _, color in clickable_regions:
-                    # Display face_id with color-coding
-                    st.markdown(
-                        f"<span style='color: {color}; font-weight: bold;'>Face ID: {face_id}</span>",
-                        unsafe_allow_html=True,
-                    )
-
-                    # Add a "Copy" button using st_copy_to_clipboard
-                    st_copy_to_clipboard(
-                        text=face_id,
-                        before_copy_label="📋 Copy",
-                        after_copy_label="✅ Copied!",
-                        key=f"copy_{file_name}_{face_id}",
-                    )
+                # Display Face ID and Copy button only if 'Show Face ID' is checked
+                if st.session_state.show_face_ids:
+                    for face_id, _, color in clickable_regions:
+                        st.markdown(
+                            f"<div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>"
+                            f"<span style='color: {color}; font-weight: bold;'>Face ID:</span> "
+                            f"<span style='color: {color}; font-weight: bold;'>{face_id}</span>",
+                            unsafe_allow_html=True,
+                        )
+                        st_copy_to_clipboard(
+                            text=face_id,
+                            before_copy_label="📋 Copy",
+                            after_copy_label="✅ Copied!",
+                            key=f"copy_{file_name}_{face_id}",
+                        )

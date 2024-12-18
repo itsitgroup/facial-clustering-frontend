@@ -95,3 +95,6 @@ def draw_bounding_boxes_with_colors(image_dir, image_data):
 def toggle_checkbox():
     """Toggle the state of the 'Show Images with Multiple Faces Only' checkbox."""
     st.session_state.show_multiple_faces_only = not st.session_state.show_multiple_faces_only
+
+def toggle_show_face_ids():
+    st.session_state.show_face_ids = not st.session_state.show_face_ids
