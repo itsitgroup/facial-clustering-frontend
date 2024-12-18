@@ -3,6 +3,7 @@ import json
 import base64
 import io
 import streamlit as st
+import pandas as pd
 from PIL import Image, ImageDraw
 
 
@@ -98,23 +99,31 @@ def draw_bounding_boxes_with_colors(image_dir, image_data):
 def show_face_details(face_info):
     """Display a modal with face details."""
     st.markdown("## Face Details")
-    st.table({
+
+    # Prepare data for display, ensuring all values are strings
+    data = {
         "Attribute": [
             "Cluster Label", "Cluster Size", "Face ID", "File Name", 
             "Coordinates", "Width", "Height", "Alignment Method", 
             "Score", "Blur Score"
         ],
         "Value": [
-            face_info.get("cluster_label", "N/A"),
-            face_info.get("cluster_size", "N/A"),
-            face_info.get("face_id", "N/A"),
-            face_info.get("file_name", "N/A"),
-            face_info.get("cords", "N/A"),
-            face_info.get("width", "N/A"),
-            face_info.get("height", "N/A"),
-            face_info.get("alignment_method", "N/A"),
-            face_info.get("score", "N/A"),
-            face_info.get("blur_score", "N/A"),
+            str(face_info.get("cluster_label", "N/A")),
+            str(face_info.get("cluster_size", "N/A")),
+            str(face_info.get("face_id", "N/A")),
+            str(face_info.get("file_name", "N/A")),
+            str(face_info.get("cords", "N/A")),
+            str(face_info.get("width", "N/A")),
+            str(face_info.get("height", "N/A")),
+            str(face_info.get("alignment_method", "N/A")),
+            str(face_info.get("score", "N/A")),
+            str(face_info.get("blur_score", "N/A")),
         ]
-    })
+    }
+
+    # Convert data to a DataFrame for display
+    df = pd.DataFrame(data)
+
+    # Display the table
+    st.table(df)
     st.button("Close")
