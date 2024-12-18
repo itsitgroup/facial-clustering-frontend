@@ -1,89 +1,9 @@
-import os
-import json
-import base64
-import io
+from utils import *
 import streamlit as st
-from PIL import Image, ImageDraw
+
 
 # Set wide page layout
 st.set_page_config(page_title="Cluster Visualization App", layout="wide")
-
-
-def load_json(json_file):
-    """Load the JSON content from the uploaded file and remove cluster -4."""
-    data = json.load(json_file)
-    filtered_data = [cluster for cluster in data if cluster.get("cluster_label") != -4]
-    return filtered_data
-
-
-def decode_base64_image(base64_string):
-    """Decode base64 string to an image."""
-    if not base64_string or not isinstance(base64_string, str):
-        return None
-    try:
-        image_data = base64.b64decode(base64_string)
-        return Image.open(io.BytesIO(image_data))
-    except Exception:
-        st.warning("Failed to decode thumbnail: Invalid Base64 format")
-        return None
-
-
-def process_faces_by_image(faces):
-    """Group faces by file_name and combine bounding boxes."""
-    image_data = {}  # file_name -> {"cords": [], "has_multiple_faces": False}
-
-    for face in faces:
-        file_name = face.get("file_name")
-        if not file_name:
-            st.warning("A face entry is missing 'file_name'. Skipping this face.")
-            continue
-
-        cords = face["cords"]
-        if file_name not in image_data:
-            image_data[file_name] = {"cords": [cords], "has_multiple_faces": False}
-        else:
-            image_data[file_name]["cords"].append(cords)
-            image_data[file_name]["has_multiple_faces"] = True  # Mark as multi-face
-
-    return image_data
-
-
-def draw_bounding_boxes(image_dir, image_data):
-    """Draw bounding boxes on images grouped by file_name."""
-    image_dir = image_dir.strip("'\"")
-    if not os.path.isdir(image_dir):
-        st.error(f"The directory '{image_dir}' does not exist. Please check the path.")
-        return []
-
-    images = []
-    image_dir_files = {f.lower(): f for f in os.listdir(image_dir)}  # Case-insensitive matching
-
-    for file_name, data in image_data.items():
-        actual_file_name = image_dir_files.get(file_name.lower())
-
-        if not actual_file_name:
-            st.warning(f"File {file_name} not found in {image_dir}. Skipping...")
-            continue
-
-        image_path = os.path.join(image_dir, actual_file_name)
-        try:
-            image = Image.open(image_path).convert("RGB")
-            draw = ImageDraw.Draw(image)
-
-            for cords in data["cords"]:
-                draw.rectangle(cords, outline="red", width=5)
-
-            images.append((file_name, image))
-        except Exception as e:
-            st.error(f"Error processing file {file_name}: {e}")
-    return images
-
-
-# Callback for checkbox toggle
-def toggle_checkbox():
-    """Toggle the state of the 'Show Images with Multiple Faces Only' checkbox."""
-    st.session_state.show_multiple_faces_only = not st.session_state.show_multiple_faces_only
-
 
 # Streamlit app
 st.title("Cluster Visualization App")
@@ -181,3 +101,6 @@ if uploaded_file and image_dir:
         for idx, (file_name, image) in enumerate(images):
             with columns[idx % num_columns]:
                 st.image(image, use_container_width=True, caption=f"{file_name}")
+                if st.button(f"Copy Face IDs for {file_name}", key=f"copy_{file_name}"):
+                    face_ids = "\n".join(image_data[file_name]["face_ids"])
+                    st.toast(f"Copied Face IDs:\n{face_ids}")
