@@ -89,8 +89,8 @@ if uploaded_file and image_dir:
     if st.session_state.show_multiple_faces_only and not filtered_data:
         st.info("No images with multiple faces in this cluster.")
 
-    # Display images with bounding boxes in a 3-column grid
-    images = draw_bounding_boxes(image_dir, filtered_data)
+    # Display images with bounding boxes and clickable regions in a 3-column grid
+    images = draw_bounding_boxes_with_clickable_regions(image_dir, filtered_data)
 
     if not images:
         st.info("No valid images to display.")
@@ -98,9 +98,10 @@ if uploaded_file and image_dir:
         num_columns = 3
         columns = st.columns(num_columns)
 
-        for idx, (file_name, image) in enumerate(images):
+        for idx, (file_name, image, clickable_regions) in enumerate(images):
             with columns[idx % num_columns]:
                 st.image(image, use_container_width=True, caption=f"{file_name}")
-                if st.button(f"Copy Face IDs for {file_name}", key=f"copy_{file_name}"):
-                    face_ids = "\n".join(image_data[file_name]["face_ids"])
-                    st.toast(f"Copied Face IDs:\n{face_ids}")
+                for face_id, cords in clickable_regions:
+                    if st.button(f"Face ID: {face_id}", key=f"{file_name}_{face_id}"):
+                        st.toast(f"Copied Face ID: {face_id}")
+                        st.write(f"Face ID: {face_id} copied to clipboard.")

@@ -50,8 +50,8 @@ def process_faces_by_image(faces):
     return image_data
 
 
-def draw_bounding_boxes(image_dir, image_data):
-    """Draw bounding boxes on images grouped by file_name."""
+def draw_bounding_boxes_with_clickable_regions(image_dir, image_data):
+    """Draw bounding boxes and add clickable regions for face IDs."""
     image_dir = image_dir.strip("'\"")
     if not os.path.isdir(image_dir):
         st.error(f"The directory '{image_dir}' does not exist. Please check the path.")
@@ -72,13 +72,13 @@ def draw_bounding_boxes(image_dir, image_data):
             image = Image.open(image_path).convert("RGB")
             draw = ImageDraw.Draw(image)
 
+            clickable_regions = []
             for idx, cords in enumerate(data["cords"]):
                 draw.rectangle(cords, outline="red", width=5)
-                # Add clickable region
                 face_id = data["face_ids"][idx]
-                draw.text((cords[0], cords[1] - 10), f"Click me", fill="blue")
+                clickable_regions.append((face_id, cords))
 
-            images.append((file_name, image))
+            images.append((file_name, image, clickable_regions))
         except Exception as e:
             st.error(f"Error processing file {file_name}: {e}")
     return images
