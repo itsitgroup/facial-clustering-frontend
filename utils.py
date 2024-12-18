@@ -5,6 +5,7 @@ import io
 import streamlit as st
 from PIL import Image, ImageDraw
 
+
 def load_json(json_file):
     """Load the JSON content from the uploaded file and remove cluster -4."""
     data = json.load(json_file)
@@ -50,12 +51,17 @@ def process_faces_by_image(faces):
     return image_data
 
 
-def draw_bounding_boxes_with_clickable_regions(image_dir, image_data):
-    """Draw bounding boxes and add clickable regions for face IDs."""
+def draw_bounding_boxes_with_colors(image_dir, image_data):
+    """Draw bounding boxes with unique colors for each face."""
     image_dir = image_dir.strip("'\"")
     if not os.path.isdir(image_dir):
         st.error(f"The directory '{image_dir}' does not exist. Please check the path.")
         return []
+
+    # Define a palette of colors
+    color_palette = [
+        "red", "green", "blue", "orange", "purple", "cyan", "yellow", "pink", "lime", "brown"
+    ]
 
     images = []
     image_dir_files = {f.lower(): f for f in os.listdir(image_dir)}  # Case-insensitive matching
@@ -74,9 +80,10 @@ def draw_bounding_boxes_with_clickable_regions(image_dir, image_data):
 
             clickable_regions = []
             for idx, cords in enumerate(data["cords"]):
-                draw.rectangle(cords, outline="red", width=5)
+                color = color_palette[idx % len(color_palette)]
+                draw.rectangle(cords, outline=color, width=5)  # Use unique color for each bounding box
                 face_id = data["face_ids"][idx]
-                clickable_regions.append((face_id, cords))
+                clickable_regions.append((face_id, cords, color))  # Include color in clickable regions
 
             images.append((file_name, image, clickable_regions))
         except Exception as e:

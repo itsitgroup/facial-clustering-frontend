@@ -1,6 +1,6 @@
 from utils import *
 import streamlit as st
-
+from st_copy_to_clipboard import st_copy_to_clipboard
 
 # Set wide page layout
 st.set_page_config(page_title="Cluster Visualization App", layout="wide")
@@ -53,6 +53,9 @@ if uploaded_file and image_dir:
                 if thumbnail:
                     with cols[i - 1]:
                         st.image(thumbnail, use_container_width=True)
+            else:
+                with cols[i - 1]:
+                    st.write("No thumbnail available")  # Handle missing thumbnails gracefully
 
         # Add a button to select this cluster
         if st.sidebar.button(f"Select Cluster {cluster_label}", key=f"select_{cluster_label}"):
@@ -89,8 +92,8 @@ if uploaded_file and image_dir:
     if st.session_state.show_multiple_faces_only and not filtered_data:
         st.info("No images with multiple faces in this cluster.")
 
-    # Display images with bounding boxes and clickable regions in a 3-column grid
-    images = draw_bounding_boxes_with_clickable_regions(image_dir, filtered_data)
+    # Main area: Display images with bounding boxes and color-coded face IDs
+    images = draw_bounding_boxes_with_colors(image_dir, filtered_data)
 
     if not images:
         st.info("No valid images to display.")
@@ -98,10 +101,24 @@ if uploaded_file and image_dir:
         num_columns = 3
         columns = st.columns(num_columns)
 
+        # Inside the main rendering loop
         for idx, (file_name, image, clickable_regions) in enumerate(images):
             with columns[idx % num_columns]:
+                # Display the image
                 st.image(image, use_container_width=True, caption=f"{file_name}")
-                for face_id, cords in clickable_regions:
-                    if st.button(f"Face ID: {face_id}", key=f"{file_name}_{face_id}"):
-                        st.toast(f"Copied Face ID: {face_id}")
-                        st.write(f"Face ID: {face_id} copied to clipboard.")
+
+                # Create a compact section for face_id buttons
+                for face_id, _, color in clickable_regions:
+                    # Display face_id with color-coding
+                    st.markdown(
+                        f"<span style='color: {color}; font-weight: bold;'>Face ID: {face_id}</span>",
+                        unsafe_allow_html=True,
+                    )
+
+                    # Add a "Copy" button using st_copy_to_clipboard
+                    st_copy_to_clipboard(
+                        text=face_id,
+                        before_copy_label="📋 Copy",
+                        after_copy_label="✅ Copied!",
+                        key=f"copy_{file_name}_{face_id}",
+                    )
